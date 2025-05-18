@@ -42,3 +42,42 @@ class Ksiazka:
         self.kategoria = kategoria
         self.status = Status.DOSTEPA
         self.dataDostepnosci = None
+
+class Wypozyczenie:
+    def __init__(self, id, uzytkownik, ksiazka):
+        self.id = id
+        self.uzytkownik = uzytkownik
+        self.ksiazka = ksiazka
+        self.dataWypozyczenia = datetime.now()
+        self.terminZwrotu = self.dataWypozyczenia + timedelta(days=30)
+        self.dataZwrotu = None
+        self.czyPrzetrzymane = False
+        ksiazka.zmienStatus(Status.WYPOZYCZONA)
+        uzytkownik.wypozyczenia.append(self)
+
+class Rezerwacja:
+    def __init__(self, id, uzytkownik, ksiazka):
+        self.id = id
+        self.uzytkownik = uzytkownik
+        self.ksiazka = ksiazka
+        self.dataRezerwacji = datetime.now()
+        self.dataWygasniecia = self.dataRezerwacji + timedelta(days=7)
+        ksiazka.zmienStatus(Status.ZAREZERWOWANA)
+    
+
+class Bibliotekarz:
+    def __init__(self, id, imie, nazwisko, login, haslo):
+        self.id = id
+        self.imie = imie
+        self.nazwisko = nazwisko
+        self.login = login
+        self.haslo = haslo
+
+class Biblioteka:
+    _instance = None
+    uzytkownicy = []
+    ksiazki = []
+    wypozyczenia = []
+    rezerwacje = []
+    bibliotekarze = []
+ 
