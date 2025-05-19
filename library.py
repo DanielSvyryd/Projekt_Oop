@@ -43,6 +43,21 @@ class Ksiazka:
         self.status = Status.DOSTEPA
         self.dataDostepnosci = None
 
+    def zarezerwuj(self, ksiazka):
+        if ksiazka.status != Status.DOSTEPNA:
+            raise Exception("Książka nie jest dostępna do rezerwacji")
+        rezerwacja = Rezerwacja(len(Biblioteka.rezerwacje) + 1, self, ksiazka)
+        Biblioteka.dodaj_rezerwacje(rezerwacja)
+        return rezerwacja
+
+        
+    def przedluzTermin(self, wypozyczenie):
+        if wypozyczenie.uzytkownik != self:
+            raise Exception("Nie możesz przedłużyć nie swojego wypożyczenia")
+        wypozyczenie.przedluzTermin(7)
+        return wypozyczenie.terminZwrotu
+
+
 class Wypozyczenie:
     def __init__(self, id, uzytkownik, ksiazka):
         self.id = id
@@ -55,6 +70,15 @@ class Wypozyczenie:
         ksiazka.zmienStatus(Status.WYPOZYCZONA)
         uzytkownik.wypozyczenia.append(self)
 
+    def zmienStatus(self, nowyStatus):
+        self.status = nowyStatus
+        if nowyStatus == Status.DOSTEPNA:
+            self.dataDostepnosci = None
+        elif nowyStatus == Status.WYPOZYCZONA:
+            self.dataDostepnosci = datetime.now() + timedelta(days=30)
+            
+    def ustawDateDostepnosci(self, data):
+        self.dataDostepnosci = data
 class Rezerwacja:
     def __init__(self, id, uzytkownik, ksiazka):
         self.id = id
