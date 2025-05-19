@@ -30,7 +30,19 @@ class Uzytkownic:
         self.typ = typ
         self.wypozyczenia = []
     
-    
+     def zarezerwuj(self, ksiazka):
+        if ksiazka.status != Status.DOSTEPNA:
+            raise Exception("Książka nie jest dostępna do rezerwacji")
+        rezerwacja = Rezerwacja(len(Biblioteka.rezerwacje) + 1, self, ksiazka)
+        Biblioteka.dodaj_rezerwacje(rezerwacja)
+        return rezerwacja
+
+        
+    def przedluzTermin(self, wypozyczenie):
+        if wypozyczenie.uzytkownik != self:
+            raise Exception("Nie możesz przedłużyć nie swojego wypożyczenia")
+        wypozyczenie.przedluzTermin(7)
+        return wypozyczenie.terminZwrotu
     
 class Ksiazka:
     def __init__(self, id, tytul, autor, rok_wydania, wydawnictwo, kategoria):
@@ -67,19 +79,6 @@ class Wypozyczenie:
         ksiazka.zmienStatus(Status.WYPOZYCZONA)
         uzytkownik.wypozyczenia.append(self)
 
- def zarezerwuj(self, ksiazka):
-        if ksiazka.status != Status.DOSTEPNA:
-            raise Exception("Książka nie jest dostępna do rezerwacji")
-        rezerwacja = Rezerwacja(len(Biblioteka.rezerwacje) + 1, self, ksiazka)
-        Biblioteka.dodaj_rezerwacje(rezerwacja)
-        return rezerwacja
-
-        
-    def przedluzTermin(self, wypozyczenie):
-        if wypozyczenie.uzytkownik != self:
-            raise Exception("Nie możesz przedłużyć nie swojego wypożyczenia")
-        wypozyczenie.przedluzTermin(7)
-        return wypozyczenie.terminZwrotu
 class Rezerwacja:
     def __init__(self, id, uzytkownik, ksiazka):
         self.id = id
