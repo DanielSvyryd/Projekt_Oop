@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from enum import Enum
-
+from abc import ABC, abstractmethod
 
 
 class TypUzytkownika(Enum):
@@ -20,17 +20,27 @@ class Kategoria(Enum):
     LITERATURA = 3
     NAUKI_SPOLECZNE = 4
 
-
-class Uzytkownik:
-    def __init__(self, id, imie, nazwisko, email, numer_indeksu, typ):
+class Osoba(ABC):
+    def __init__(self, id, imie, nazwisko, email=None):
         self.id = id
         self.imie = imie
         self.nazwisko = nazwisko
         self.email = email
+    
+    @abstractmethod
+    def przedstaw_sie(self):
+        pass
+
+class Uzytkownik(Osoba):
+    def __init__(self, id, imie, nazwisko, email, numer_indeksu, typ):
+        super().__init__(id, email, imie, nazwisko)
         self.numerIndeksu = numer_indeksu
         self.dataRejestracji = datetime.now()
         self.typ = typ
         self.wypozyczenia = []
+
+    def przedstaw_sie(self):
+        return f"Użytkownik: {self.imie} {self.nazwisko}, typ: {self.typ.name}"
         
     def zarezerwuj(self, ksiazka):
         if ksiazka.status != Status.DOSTEPNA:
@@ -110,13 +120,14 @@ class Rezerwacja:
         self.ksiazka.zmienStatus(Status.DOSTEPNA)
         Biblioteka.usun_rezerwacje(self)
 
-class Bibliotekarz:
+class Bibliotekarz(Osoba):
     def __init__(self, id, imie, nazwisko, login, haslo):
-        self.id = id
-        self.imie = imie
-        self.nazwisko = nazwisko
+        super().__init__(id, imie, nazwisko)
         self.login = login
         self.haslo = haslo
+
+    def przedstaw_sie(self):
+        return f"Bibliotekarz: {self.imie} {self.nazwisko}"
         
     def dodajKsiazke(self, ksiazka):
         Biblioteka.dodaj_ksiazke(ksiazka)
