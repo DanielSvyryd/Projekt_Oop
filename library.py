@@ -30,7 +30,7 @@ class Uzytkownic:
         self.typ = typ
         self.wypozyczenia = []
     
-     def zarezerwuj(self, ksiazka):
+    def zarezerwuj(self, ksiazka):
         if ksiazka.status != Status.DOSTEPNA:
             raise Exception("Książka nie jest dostępna do rezerwacji")
         rezerwacja = Rezerwacja(len(Biblioteka.rezerwacje) + 1, self, ksiazka)
@@ -55,7 +55,7 @@ class Ksiazka:
         self.status = Status.DOSTEPA
         self.dataDostepnosci = None
 
-  def zmienStatus(self, nowyStatus):
+    def zmienStatus(self, nowyStatus):
         self.status = nowyStatus
         if nowyStatus == Status.DOSTEPNA:
             self.dataDostepnosci = None
@@ -79,6 +79,24 @@ class Wypozyczenie:
         ksiazka.zmienStatus(Status.WYPOZYCZONA)
         uzytkownik.wypozyczenia.append(self)
 
+    def przedluzTermin(self, dni):
+        if self.dataZwrotu is not None:
+            raise Exception("Nie można przedłużyć już zwróconego wypożyczenia")
+        self.terminZwrotu += timedelta(days=dni)
+        return self.terminZwrotu
+
+    def obliczKare(self):
+        if self.dataZwrotu is None and datetime.now() > self.terminZwrotu:
+            self.czyPrzetrzymane = True
+            return (datetime.now() - self.terminZwrotu).days * 0.50
+        return 0
+    
+    def zwroc(self):
+        self.dataZwrotu = datetime.now()
+        self.ksiazka.zmienStatus(Status.DOSTEPNA)
+        return self.obliczKare()
+
+
 class Rezerwacja:
     def __init__(self, id, uzytkownik, ksiazka):
         self.id = id
@@ -88,6 +106,10 @@ class Rezerwacja:
         self.dataWygasniecia = self.dataRezerwacji + timedelta(days=7)
         ksiazka.zmienStatus(Status.ZAREZERWOWANA)
     
+    def anuluj(self):
+        self.ksiazka.zmienStatus(Status.DOSTEPNA)
+        Biblioteka.usun_rezerwacje(self)
+
 
 class Bibliotekarz:
     def __init__(self, id, imie, nazwisko, login, haslo):
@@ -97,6 +119,22 @@ class Bibliotekarz:
         self.login = login
         self.haslo = haslo
 
+    def dodajKsiazke(self, ksiazka):
+        Biblioteka.dodaj_ksiazke(ksiazka)
+        
+    def usunKsiazke(self, ksiazka):
+        Biblioteka.usun_ksiazke(ksiazka)
+        
+    def zatwierdzWypozyczenie(self, wypozyczenie):
+        Biblioteka.dodaj_wypozyczenie(wypozyczenie)
+        
+    def zatwierdzZwrot(self, wypozyczenie):
+        kara = wypozyczenie.zwroc()
+        if kara > 0:
+            print(f"Naliczona kara: {kara:.2f} zł")
+        Biblioteka.usun_wypozyczenie(wypozyczenie)
+        return kara
+
 class Biblioteka:
     _instance = None
     uzytkownicy = []
@@ -105,3 +143,45 @@ class Biblioteka:
     rezerwacje = []
     bibliotekarze = []
  
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(Biblioteka, cls).__new__(cls)
+        return cls._instance
+    
+
+    @classmethod
+    def dodaj_uzytkownika(cls, uzytkownik):
+        cls.uzytkownicy.append(uzytkownik)
+        
+    @classmethod
+    def dodaj_ksiazke(cls, ksiazka):
+        cls.ksiazki.append(ksiazka)
+        
+    @classmethod
+    def dodaj_wypozyczenie(cls, wypozyczenie):
+        cls.wypozyczenia.append(wypozyczenie)
+        
+    @classmethod
+    def dodaj_rezerwacje(cls, rezerwacja):
+        cls.rezerwacje.append(rezerwacja)
+        
+    @classmethod
+    def usun_ksiazke(cls, ksiazka):
+        cls.ksiazki.remove(ksiazka)
+        
+    @classmethod
+    def usun_wypozyczenie(cls, wypozyczenie):
+        cls.wypozyczenia.remove(wypozyczenie)
+        
+    @classmethod
+    def usun_rezerwacje(cls, rezerwacja):
+        cls.rezerwacje.remove(rezerwacja)
+        
+    @classmethod
+    def znajdz_ksiazke_po_tytule(cls, tytul):
+        return [k for k in cls.ksiazki if tytul.lower() in k.tytul.lower()]
+    
+    @classmethod
+    def znajdz_uzytkownika_po_nazwisku(cls, nazwisko):
+        return [u for u in cls.uzytkownicy if nazwisko.lower() in u.nazwisko.lower()]
